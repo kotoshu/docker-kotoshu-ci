@@ -1,0 +1,8 @@
+services:
+  kotoshu:
+    build: .
+    image: kotoshu-ci:local
+    volumes:
+      - ./:/work
+    working_dir: /work
+    command: ["check", "README.md", "--format", "text"]
