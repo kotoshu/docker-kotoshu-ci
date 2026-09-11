@@ -16,7 +16,7 @@ ARG KOTOSHU_PREWARM_LANGS="en"
 # in this container). Builder stage only — the runtime stage copies
 # the built gem tree and stays slim.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git ca-certificates build-essential curl \
+    && apt-get install -y --no-install-recommends git ca-certificates build-essential curl clang libclang-dev \
     && rm -rf /var/lib/apt/lists/* \
     && curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
 ENV PATH="/root/.cargo/bin:$PATH"
