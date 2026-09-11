@@ -21,7 +21,8 @@ jobs:
         run: docker build -t kotoshu-ci-guard .
       - name: The installed engine is the 1.x line
         run: |
-          output="$(docker run --rm kotoshu-ci-guard kotoshu --version)"
+          # the image ENTRYPOINT is already kotoshu - args append to it
+          output="$(docker run --rm kotoshu-ci-guard --version)"
           echo "${output}"
           version="$(printf '%s\n' "${output}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
           case "${version}" in
