@@ -6,11 +6,18 @@ FROM ruby:${RUBY_VERSION}-slim AS builder
 
 ARG KOTOSHU_PREWARM_LANGS="en"
 
-# ruby:slim doesn't ship build tools; kotoshu has no native ext, but
-# bundler needs git for path gems and ca-certificates for HTTPS.
+# kotoshu ships an optional Rust native extension (the accelerator;
+# the pure-Ruby engine is the default backend and always present).
+# ruby:slim has neither make nor cargo, so the gem cannot install at
+# all without them (found by the plan-125 version guard, 2026-09-12):
+# rb_sys builds the ext during `gem install` and fails hard on a
+# missing toolchain. build-essential satisfies make+cc; rb_sys
+# installs its pinned Rust toolchain itself when RB_SYS_FORCE...=true
+# (the extconf's documented override), so no rustup layer here.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git ca-certificates \
+    && apt-get install -y --no-install-recommends git ca-certificates build-essential \
     && rm -rf /var/lib/apt/lists/*
+ENV RB_SYS_FORCE_INSTALL_RUST_TOOLCHAIN=true
 
 WORKDIR /build
 
