@@ -11,13 +11,15 @@ ARG KOTOSHU_PREWARM_LANGS="en"
 # ruby:slim has neither make nor cargo, so the gem cannot install at
 # all without them (found by the plan-125 version guard, 2026-09-12):
 # rb_sys builds the ext during `gem install` and fails hard on a
-# missing toolchain. build-essential satisfies make+cc; rb_sys
-# installs its pinned Rust toolchain itself when RB_SYS_FORCE...=true
-# (the extconf's documented override), so no rustup layer here.
+# missing toolchain. build-essential supplies make+cc; a proper rustup
+# install supplies cargo (rb_sys's own bootstrap path is dash-fragile
+# in this container). Builder stage only — the runtime stage copies
+# the built gem tree and stays slim.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git ca-certificates build-essential \
-    && rm -rf /var/lib/apt/lists/*
-ENV RB_SYS_FORCE_INSTALL_RUST_TOOLCHAIN=true
+    && apt-get install -y --no-install-recommends git ca-certificates build-essential curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+ENV PATH="/root/.cargo/bin:$PATH"
 
 WORKDIR /build
 
