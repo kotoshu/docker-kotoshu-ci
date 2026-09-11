@@ -1,0 +1,30 @@
+name: ci
+
+# Plan 125: the image installs kotoshu from RubyGems at build time
+# (latest by default, KOTOSHU_VERSION to pin). A pin nobody reads is
+# guarded by a check that reads it: build the image and assert the
+# engine inside reports the major this image is documented to carry —
+# the plan-118 bug class (a floor that silently excludes the line it
+# ships) fails here loudly.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  version-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image (default install)
+        run: docker build -t kotoshu-ci-guard .
+      - name: The installed engine is the 1.x line
+        run: |
+          output="$(docker run --rm kotoshu-ci-guard kotoshu --version)"
+          echo "${output}"
+          version="$(printf '%s\n' "${output}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+          case "${version}" in
+            1.*) echo "guard: kotoshu ${version} inside the image" ;;
+            *) echo "guard: expected kotoshu 1.x inside the image, got '${version}'" >&2; exit 1 ;;
+          esac
