@@ -29,3 +29,16 @@ jobs:
             1.*) echo "guard: kotoshu ${version} inside the image" ;;
             *) echo "guard: expected kotoshu 1.x inside the image, got '${version}'" >&2; exit 1 ;;
           esac
+
+      - name: The native engine is installed and engages under auto
+        run: |
+          # plan 133: this image must carry the PRECOMPILED Rust engine
+          # (the builder installs the x86_64-linux platform gem, no
+          # toolchain). If this fails, the builder regressed to a
+          # source install or the platform gem stopped resolving.
+          docker run --rm --entrypoint ruby kotoshu-ci-guard -e '
+            require "kotoshu"
+            abort "native extension missing - platform gem not resolved" unless Kotoshu::Native.available?
+            abort "backend default is not auto" unless Kotoshu::Configuration::DEFAULTS[:backend] == "auto"
+            puts "guard: native engine engaged (backend auto)"
+          '

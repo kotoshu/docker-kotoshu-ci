@@ -6,20 +6,15 @@ FROM ruby:${RUBY_VERSION}-slim AS builder
 
 ARG KOTOSHU_PREWARM_LANGS="en"
 
-# kotoshu ships an optional Rust native extension (the accelerator;
-# the pure-Ruby engine is the default backend and always present).
-# ruby:slim has neither make nor cargo, so the gem cannot install at
-# all without them (found by the plan-125 version guard, 2026-09-12):
-# rb_sys builds the ext during `gem install` and fails hard on a
-# missing toolchain. build-essential supplies make+cc; a proper rustup
-# install supplies cargo (rb_sys's own bootstrap path is dash-fragile
-# in this container). Builder stage only — the runtime stage copies
-# the built gem tree and stays slim.
+# kotoshu 1.0.2+ publishes precompiled native platform gems: on
+# x86_64-linux `gem install kotoshu` resolves kotoshu-*-x86_64-linux
+# with the Rust engine inside the gem, so the builder needs no
+# compiler toolchain at all (the plan-125 build layer existed because
+# the gem had to compile its extension at install time). git and
+# ca-certificates remain for HTTPS fetches.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git ca-certificates build-essential curl clang libclang-dev \
-    && rm -rf /var/lib/apt/lists/* \
-    && curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
-ENV PATH="/root/.cargo/bin:$PATH"
+    && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
